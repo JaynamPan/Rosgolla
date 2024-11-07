@@ -1,2 +1,5 @@
 /build/*
 !/build/output/rosgolla.exe
+
+/src/tmp
+/src/backup

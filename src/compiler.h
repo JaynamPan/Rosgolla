@@ -1,5 +1,5 @@
-#ifndef ros_compiler_h
-#define ros_compiler_h
+#ifndef clox_compiler_h
+#define clox_compiler_h
 
 #include "vm.h"
 #include "object.h"

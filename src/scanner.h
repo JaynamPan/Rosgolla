@@ -1,5 +1,5 @@
-#ifndef ros_scanner_h
-#define ros_scanner_h
+#ifndef clox_scanner_h
+#define clox_scanner_h
 typedef struct {
 	const char *start;
 	const char *current;

@@ -2,6 +2,7 @@
 #include <string.h>
 #include "scanner.h"
 #include "common.h"
+#include "debug.h"
 
 
 Scanner scanner;
@@ -18,7 +19,9 @@ static Token makeToken(TokenType type) {
 	token.line = scanner.line;
 	token.start = scanner.start;
 	token.type = type;
+	
 	//printf("makeToken, start = %s, type = %d, length = %d\n", scanner.start, type, token.length);
+	//printToken(&token);
 	return token;
 }
 static bool isDigit(char c) {
@@ -54,6 +57,8 @@ static TokenType checkKeyword(int start, int length,
 	        memcmp(scanner.start + start, rest, length) == 0) {
 		return type;
 	}
+	
+	return TOKEN_IDENTIFIER;
 }
 static TokenType identifierType() {
 	switch (scanner.start[0]) {
