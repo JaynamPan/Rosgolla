@@ -43,7 +43,15 @@ typedef struct {
 	int depth;
 } Local;
 
-typedef struct {
+typedef enum {
+    TYPE_FUNCTION,
+    TYPE_SCRIPT
+} FunctionType;
+
+typedef struct Compiler {
+	struct Compiler *enclosing;
+	ObjFunction *function;
+	FunctionType type;
 	Local locals[UINT8_COUNT];
 	int localCount;
 	int scopeDepth;
@@ -63,7 +71,7 @@ Compiler *current = NULL;
 Chunk *compilingChunk;
 
 static Chunk* currentChunk() {
-	return compilingChunk;
+	return &current->function->chunk;
 }
 
 static void errorAt(Token *token, const char *msg) {
@@ -182,19 +190,38 @@ static void patchJump(int offset) {
 }
 
 
-static void initCompiler(Compiler *compiler) {
+static void initCompiler(Compiler *compiler, FunctionType type) {
+	compiler->enclosing = current;
+
+	compiler->function = NULL;
+	compiler->type = type;
 	compiler->localCount = 0;
 	compiler->scopeDepth = 0;
+	compiler->function = newFunction();
 	current = compiler;
+	if(type != TYPE_SCRIPT){
+		current->function->name = 
+			copyString(parser.previous.start,
+			parser.previous.length);
+	}
+	
+	Local *local = &current->locals[current->localCount++];
+	local->depth = 0;
+	local->name.start = "";
+	local->name.length = 0;
 }
 
-static void endCompiler() {
+static ObjFunction* endCompiler() {
 	emitReturn();
+	ObjFunction *function = current->function;
 #ifdef DEBUG_PRINT_CODE
 	if(!parser.hadError) {
-		disassembleChunk(currentChunk(), "code");
+		disassembleChunk(currentChunk(), function->name == NULL ?
+		                 "<script>" : function->name->chars);
 	}
 #endif
+	current = current->enclosing;
+	return function;
 }
 
 static void beginScope() {
@@ -328,6 +355,7 @@ static uint8_t parseVariable(const char *errMsg) {
 }
 
 static void markInitialized() {
+	if(current->scopeDepth == 0) return;
 	current->locals[current->localCount - 1].depth =
 	    current->scopeDepth;
 }
@@ -370,6 +398,50 @@ static void block() {
 		declaration();
 	}
 	consume(TOKEN_RIGHT_BRACE, "Expect '}' after a block.");
+}
+
+static void function(FunctionType type) {
+	Compiler compiler;
+	initCompiler(&compiler, type);
+	beginScope();
+
+	consume(TOKEN_LEFT_PAREN,
+	        "Expect '(' after function name.");
+	// params
+	if(!check(TOKEN_RIGHT_PAREN)) {
+		do {
+			current->function->arity++;
+			if(current->function->arity > 255) {
+				errorAtCurrent(
+				    "Can't have more than 255 params.");
+			}
+			uint8_t constant = parseVariable(
+			                       "Expect parameter name.");
+			defineVariable(constant);
+		} while(match(TOKEN_COMMA));
+	}
+
+
+	consume(TOKEN_RIGHT_PAREN,
+	        "Expect ')' after parameters.");
+	consume(TOKEN_LEFT_BRACE,
+	        "Expect '{' before function body.");
+	block(); // would consume the right brace
+
+	ObjFunction *function = endCompiler();
+	emitBytes(OP_CONSTANT,
+	          makeConstant(OBJ_VAL(function)));
+	// don't need endScope because compiler
+	// was already ended
+}
+
+static void funDeclaration() {
+	uint8_t global = parseVariable(
+	                     "Expect function name.");
+	markInitialized();
+	function(TYPE_FUNCTION);
+	defineVariable(global);
+
 }
 
 static void varDeclaration() {
@@ -455,7 +527,7 @@ static void forStatement() {
 		loopStart = incrementStart;
 		patchJump(bodyJump);
 	}
-	
+
 	statement();
 	emitLoop(loopStart);
 	// exit when condition evaluates to false
@@ -519,6 +591,8 @@ static void statement() {
 static void declaration() {
 	if(match(TOKEN_VAR)) {
 		varDeclaration();
+	} else if(match(TOKEN_FUN)) {
+		funDeclaration();
 	} else {
 		statement();
 	}
@@ -658,12 +732,11 @@ ParseRule rules[] = {
 static ParseRule* getRule(TokenType type) {
 	return &rules[type];
 }
-bool compile(const char *source, Chunk *chunk) {
+
+ObjFunction* compile(const char *source) {
 	initScanner(source);
 	Compiler compiler;
-	initCompiler(&compiler);
-	// init chunk
-	compilingChunk = chunk;
+	initCompiler(&compiler, TYPE_SCRIPT);
 
 	// init parser
 	parser.hadError = false;
@@ -676,8 +749,8 @@ bool compile(const char *source, Chunk *chunk) {
 		declaration();
 	}
 
-	endCompiler();
-	return !parser.hadError;
+	ObjFunction *function = endCompiler();
+	return parser.hadError ? NULL : function;
 }
 
 
