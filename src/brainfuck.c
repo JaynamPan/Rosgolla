@@ -5,13 +5,11 @@
 #include "meow.h"
 
 void runBrainFuck(const char *code) {
-	unsigned char tape[TAPE_SIZE] = {0};  // Brainfuck memory tape
+	unsigned char tape[TAPE_SIZE] = {0};   // Brainfuck memory tape
 	unsigned char *ptr = tape;             // Data pointer
-	const char *pc = code;                  // Program counter
-	int loop;                               // Loop counter
+	const char *pc = code;                 // Program counter
+	int loop;                              // Loop counter
 	
-	// hint for result
-	printf("\nGot the meowings: ");
 	while (*pc) {
 		switch (*pc) {
 			case '>':
@@ -35,7 +33,6 @@ void runBrainFuck(const char *code) {
 				(*ptr)--;
 				break;
 			case '.':
-				//printf("char = %d\n", *ptr);
 				putchar(*ptr);
 				break;
 			case ',':

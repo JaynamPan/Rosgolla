@@ -29,23 +29,19 @@ static void freeObject(Obj *object) {
 			FREE(ObjFunction, object);
 			break;
 		}
+		case OBJ_NATIVE:{
+			FREE(ObjNative, object);
+			break;
+		}
 	}
 }
 
 void freeObjects() {
 	Obj *obj = vm.objects;
-	if(obj == NULL) {
-		return;
-		// TODO: I added this to fix the bug:
-		// when run program in repl it would exit nicely,
-		// but when runing a file it seems vm.objects would
-		// be null if there's no global vars.
-	}
 	while(obj->next != NULL) {
 		Obj *next = obj->next;
 		freeObject(obj);
 		obj = next;
-
 	}
 }
 

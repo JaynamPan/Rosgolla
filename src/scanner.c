@@ -4,7 +4,6 @@
 #include "common.h"
 #include "debug.h"
 
-
 Scanner scanner;
 
 void initScanner(const char *source) {
@@ -19,11 +18,10 @@ static Token makeToken(TokenType type) {
 	token.line = scanner.line;
 	token.start = scanner.start;
 	token.type = type;
-	
-	//printf("makeToken, start = %s, type = %d, length = %d\n", scanner.start, type, token.length);
-	//printToken(&token);
+
 	return token;
 }
+
 static bool isDigit(char c) {
 	return c >= '0' && c <= '9';
 }
@@ -57,9 +55,10 @@ static TokenType checkKeyword(int start, int length,
 	        memcmp(scanner.start + start, rest, length) == 0) {
 		return type;
 	}
-	
+
 	return TOKEN_IDENTIFIER;
 }
+
 static TokenType identifierType() {
 	switch (scanner.start[0]) {
 		case 'a':
@@ -109,11 +108,11 @@ static TokenType identifierType() {
 	}
 	return TOKEN_IDENTIFIER;
 }
+
 static Token identifier() {
 	while(isAlpha(peek()) || isDigit(peek())) advance();
 	return makeToken(identifierType());
 }
-
 
 static bool match(char expected) {
 	if(isAtEnd()) return false;
@@ -122,7 +121,6 @@ static bool match(char expected) {
 	scanner.current++;
 	return true;
 }
-
 
 static Token errorToken(const char *msg) {
 	Token token;
@@ -170,7 +168,6 @@ static void skipWhiteSpace() {
 		}
 	}
 }
-
 
 static Token number() {
 	while(isDigit(peek())) advance();
@@ -235,11 +232,7 @@ Token scanToken() {
 			           match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
 		case '"':
 			return string();
-
 	}
 
 	return errorToken("Unexpected character.");
-
 }
-
-

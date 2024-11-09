@@ -1,5 +1,5 @@
-#ifndef clox_chunk_h
-#define clox_chunk_h
+#ifndef rosgolla_chunk_h
+#define rosgolla_chunk_h
 
 #include "common.h"
 #include "value.h"
@@ -29,6 +29,7 @@ typedef enum{
 	OP_JUMP_IF_FALSE,
 	OP_JUMP,
 	OP_LOOP,
+	OP_CALL,
 	
 } OpCode; 
 

@@ -9,8 +9,6 @@
 #define ALLOCATE_OBJ(type, objectType)\
 	((type*) allocateObject(sizeof(type), objectType))
 
-
-
 static Obj* allocateObject(size_t size, ObjType type) {
 	Obj* object = (Obj*)reallocate(NULL, 0, size);
 	object->type = type;
@@ -27,6 +25,12 @@ ObjFunction* newFunction() {
 	function->arity = 0;
 	initChunk(&function->chunk);
 	return function;
+}
+
+ObjNative* newNative(NativeFn function){
+	ObjNative *native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+	native->function = function;
+	return native;
 }
 
 static ObjString* allocateString(char *chars, int length, uint32_t hash) {
@@ -61,7 +65,6 @@ ObjString* takeString(char *chars, int length) {
 
 ObjString* copyString(const char *chars, int length) {
 	uint32_t hash = hashString(chars, length);
-	//printf("copyString, hash = %u\n", hash);
 	ObjString *interned = tableFindString(&vm.strings, chars, length, hash);
 	if(interned != NULL) return interned;
 
@@ -70,7 +73,6 @@ ObjString* copyString(const char *chars, int length) {
 	heapChars[length] = '\0';
 
 	return allocateString(heapChars, length, hash);
-
 }
 
 static void printFunction(ObjFunction *function){
@@ -84,11 +86,15 @@ static void printFunction(ObjFunction *function){
 void printObject(Value value) {
 	switch(OBJ_TYPE(value)) {
 		case OBJ_STRING:
-			printf("%s\n", AS_CSTRING(value));
+			printf("%s", AS_CSTRING(value));
 			break;
 		case OBJ_FUNCTION:
 			printFunction(AS_FUNCTION(value));
 			break;
+		case OBJ_NATIVE:{
+			printf("<native fn>");
+			break;
+		}
 		default:
 			return;
 	}

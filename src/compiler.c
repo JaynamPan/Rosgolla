@@ -4,6 +4,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
 #endif
@@ -90,7 +91,6 @@ static void errorAt(Token *token, const char *msg) {
 }
 
 static void errorAtCurrent(const char *msg) {
-	//printf("err at current");
 	errorAt(&parser.current, msg);
 }
 
@@ -103,10 +103,8 @@ static void advance() {
 
 	for(;;) {
 		parser.current = scanToken();
-		//printf("token type = %d\n", parser.current.type);
 		if(parser.current.type != TOKEN_ERROR) break;
 		// have errors
-
 		errorAtCurrent(parser.current.start);
 	}
 }
@@ -130,11 +128,8 @@ static bool match(TokenType type) {
 }
 
 static void emitByte(uint8_t byte) {
-	//printf("emitted byte = %d\n" , byte);
 	writeChunk(currentChunk(), byte, parser.previous.line);
 }
-
-
 
 static void emitBytes(uint8_t byte1, uint8_t byte2) {
 	emitByte(byte1);
@@ -149,7 +144,6 @@ static void emitLoop(int loopStart) {
 
 	emitByte((offset >> 8) & 0xff);
 	emitByte(offset & 0xff);
-
 }
 
 static int emitJump(uint8_t instruction) {
@@ -161,6 +155,7 @@ static int emitJump(uint8_t instruction) {
 }
 
 static void emitReturn() {
+	emitByte(OP_NIL);
 	emitByte(OP_RETURN);
 }
 
@@ -186,9 +181,7 @@ static void patchJump(int offset) {
 	}
 	currentChunk()->code[offset] = (jump >> 8) & 0xff;
 	currentChunk()->code[offset + 1 ] = jump & 0xff;
-
 }
-
 
 static void initCompiler(Compiler *compiler, FunctionType type) {
 	compiler->enclosing = current;
@@ -199,12 +192,12 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
 	compiler->scopeDepth = 0;
 	compiler->function = newFunction();
 	current = compiler;
-	if(type != TYPE_SCRIPT){
-		current->function->name = 
-			copyString(parser.previous.start,
-			parser.previous.length);
+	if(type != TYPE_SCRIPT) {
+		current->function->name =
+		    copyString(parser.previous.start,
+		               parser.previous.length);
 	}
-	
+
 	Local *local = &current->locals[current->localCount++];
 	local->depth = 0;
 	local->name.start = "";
@@ -227,6 +220,7 @@ static ObjFunction* endCompiler() {
 static void beginScope() {
 	current->scopeDepth++;
 }
+
 static void endScope() {
 	current->scopeDepth--;
 	while(current->localCount > 0 &&
@@ -368,6 +362,23 @@ static void defineVariable(uint8_t global) {
 	emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
+static uint8_t argumentList() {
+	uint8_t argCount = 0;
+	if(!check(TOKEN_RIGHT_PAREN)) {
+		do {
+			expression();
+			if(argCount == 255) {
+				error(
+				    "Can't have more than 255 params.");
+			}
+			argCount++;
+		} while(match(TOKEN_COMMA));
+	}
+	consume(TOKEN_RIGHT_PAREN,
+	        "Expect ')' after params.");
+	return argCount;
+}
+
 static void and_(bool canAssign) {
 	int endJump = emitJump(OP_JUMP_IF_FALSE);
 
@@ -459,6 +470,23 @@ static void printStatement() {
 	expression();
 	consume(TOKEN_SEMICOLON, "Expect ';' after value.");
 	emitByte(OP_PRINT);
+}
+
+static void returnStatement() {
+	// prevent return from top-level
+	if(current->type == TYPE_SCRIPT) {
+		error(
+		    "Can't return from top-level code.0'");
+	}
+
+	if(match(TOKEN_SEMICOLON)) {
+		emitReturn();
+	} else {
+		expression();
+		consume(TOKEN_SEMICOLON,
+		        "Expect ';' after return value.");
+		emitByte(OP_RETURN);
+	}
 }
 
 static void synchronize() {
@@ -584,6 +612,8 @@ static void statement() {
 		endScope();
 	} else if(match(TOKEN_FOR)) {
 		forStatement();
+	} else if(match(TOKEN_RETURN)) {
+		returnStatement();
 	} else {
 		expressionStatement();
 	}
@@ -665,6 +695,11 @@ static void binary(bool canAssign) {
 	}
 }
 
+static void call(bool canAssign) {
+	uint8_t argCount = argumentList();
+	emitBytes(OP_CALL, argCount);
+}
+
 static void literal(bool canAssign) {
 	switch(parser.previous.type) {
 		case TOKEN_NIL:
@@ -687,7 +722,7 @@ static void grouping(bool canAssign) {
 }
 
 ParseRule rules[] = {
-	[TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
+	[TOKEN_LEFT_PAREN]    = {grouping, call,   PREC_CALL},
 	[TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE},
 	[TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},

@@ -1,0 +1,17 @@
+// test the stacktrace feature
+
+fun funcA() {
+	funcB(); 
+}
+
+fun funcB() { 
+	funcC(); 
+}
+
+fun funcC() {
+	// this will trigger a runtime error 
+	funcC("too", "many"); 
+}
+
+// run 
+funcA();

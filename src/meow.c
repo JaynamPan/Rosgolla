@@ -1,11 +1,11 @@
-#include "meow.h"
 #include <string.h>
 #include <stdio.h>
+#include "meow.h"
 
 #define MEOW_LEN 4
 
 static char getOpCode(const char *meowing){
-	// ><+-.,[]
+	// 8 operate code are: > < + - . , [ ] 
 	char result;
 	if(strncmp(meowing, "Meow", MEOW_LEN) == 0){
 		result = '>';
@@ -24,7 +24,6 @@ static char getOpCode(const char *meowing){
 	}else if(strncmp(meowing, "meOW", MEOW_LEN) == 0){
 		result = ']';
 	}
-	// move ptr
 	return result;
 }
 
@@ -41,7 +40,6 @@ bool isMeowings(const char *source) {
 			ptr++;
 			continue;
 		}
-
 		// Check if the substring matches "meow" in any case
 		if (strncasecmp(ptr, meow, MEOW_LEN) == 0) {
 			ptr += meow_length; // Move past the "meow"
@@ -50,12 +48,10 @@ bool isMeowings(const char *source) {
 		}
 	}
 	return true; // All checks passed
-
 }
 
 void runMeow(const char *meowings) {
 	char *parsedCode = parseMeow(meowings);
-	//printf("parsed = %s\n", parsedCode);
 	runBrainFuck(parsedCode);
 }
 
@@ -72,14 +68,10 @@ char* parseMeow(const char *meowings) {
 			ptr++;
 			continue;
 		}
-
 		parsed[count] = getOpCode(ptr);
 		ptr += MEOW_LEN;
 		count++;
 	}
 	parsed[count] = '\0';
-
 	return parsed;
-
-
 }

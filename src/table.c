@@ -7,6 +7,7 @@
 #include "table.h"
 
 #define TABLE_MAX_LOAD 0.75
+
 Entry *tombstone = NULL;
 
 void initTable(Table *table) {
@@ -29,21 +30,20 @@ static Entry* findEntry(Entry *entries, int capacity, ObjString *key) {
 		// check tombstone
 		if(entry->key == NULL) {
 			if(IS_NIL(entry->value)) {
-				// empty entry
-				// if tombstone is set, then just return tombstone,
-				// this is searching to insert
+				// empty entry.
+				// if tombstone is set, then just return tombstone.
+				// this is searching to insert.
 				return tombstone != NULL ? tombstone : entry;
 			} else {
-				// a tombstone
-				// mark it and move on
-				// this is for searching
+				// a tombstone.
+				// mark it and move on.
+				// this is for searching.
 				if(tombstone == NULL) tombstone = entry;
 			}
 		} else if(entry->key == key) {
 			// found the entry
 			return entry;
 		}
-
 		index = (index + 1) % capacity;
 	}
 }
@@ -128,7 +128,6 @@ ObjString* tableFindString(Table *table, const char *chars,
 			// found it
 			return entry->key;
 		}
-
 		index = (index + 1) % table->capacity;
 	}
 }
@@ -137,8 +136,6 @@ bool tableGet(Table *table, ObjString *key, Value *value) {
 	if(table->count == 0) return false; // empty entries
 	Entry *entry = findEntry(table->entries, table->capacity, key);
 	if(entry->key == NULL) return false; // didn't find
-	*value = entry->value; // set value var, not value ptr
+	*value = entry->value;
 	return true;
-
-
 }

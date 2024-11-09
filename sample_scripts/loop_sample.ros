@@ -1,12 +1,11 @@
 // print 0 - 9 with for loop
-print "";
 print "0-9 with for loop";
 for(var i = 0; i < 10; i = i + 1){
 	print i;
 }
 
 // print 10-19 with while loop
-print "";
+
 print "10-19 with while loop";
 var i = 10;
 while(i < 20){

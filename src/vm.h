@@ -1,5 +1,5 @@
-#ifndef clox_vm_h
-#define clox_vm_h
+#ifndef rosgolla_vm_h
+#define rosgolla_vm_h
 
 #include "chunk.h"
 #include "value.h"
@@ -8,15 +8,16 @@
 
 #define FRAME_MAX 64
 #define STACK_MAX (FRAME_MAX * UINT8_COUNT)
+
 typedef struct {
 	ObjFunction *function;
-	uint8_t *ip; 
-	// store caller's ip 
+	uint8_t *ip;
+	// store caller's ip
 	// for callee to return to
 	Value *slots;
 } CallFrame;
 
-typedef struct{
+typedef struct {
 	CallFrame frames[FRAME_MAX];
 	int frameCount;
 	Value stack[STACK_MAX];
@@ -26,10 +27,10 @@ typedef struct{
 	Obj* objects;
 } VM;
 
-typedef enum{
-	INTERPRET_OK,
-	INTERPRET_COMPILE_ERROR,
-	INTERPRET_RUNTIME_ERROR
+typedef enum {
+    INTERPRET_OK,
+    INTERPRET_COMPILE_ERROR,
+    INTERPRET_RUNTIME_ERROR
 } InterpretResult;
 
 void initVM();

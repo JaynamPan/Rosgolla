@@ -1,5 +1,6 @@
-#ifndef clox_scanner_h
-#define clox_scanner_h
+#ifndef rosgolla_scanner_h
+#define rosgolla_scanner_h
+
 typedef struct {
 	const char *start;
 	const char *current;
@@ -24,7 +25,7 @@ typedef enum {
     TOKEN_FOR, TOKEN_FUN, TOKEN_IF, TOKEN_NIL, TOKEN_OR,
     TOKEN_PRINT, TOKEN_RETURN, TOKEN_SUPER, TOKEN_THIS,
     TOKEN_TRUE, TOKEN_VAR, TOKEN_WHILE,
-
+    // Special tokens.
     TOKEN_ERROR, TOKEN_EOF
 } TokenType;
 
